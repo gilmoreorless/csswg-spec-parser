@@ -49,7 +49,7 @@ function compareShorthands(specs) {
   let headerShown = false;
   specs.forEach((spec) => {
     const different = _.compact(spec.propsShorthand.map(({ prop, longhand }) => {
-      const existing = cssShorthandProperties.expand(prop);
+      const existing = _.flattenDeep(cssShorthandProperties.expand(prop, true));
       const parsed = normaliseLonghands(longhand, spec.propsShorthand);
       if (!isEqualArray(existing, parsed)) {
         return { prop, parsed };
@@ -70,18 +70,34 @@ function compareShorthands(specs) {
 
 /*** ANIMATABLE ***/
 
-function normaliseAnimatable(propDef) {
-  const longhands = cssShorthandProperties.expand(propDef.prop).filter(p => p !== propDef.prop);
-  log.debug('(normaliseAnimatable)', propDef, longhands);
-  // TODO: Use parsed shorthands if available
-  return longhands;
+function normaliseAnimatable(propDef, parsedShorthands) {
+  let clone = _.clone(propDef.details);
+  if (!clone.properties) {
+    return clone;
+  }
+
+  const existingLonghands = cssShorthandProperties.expand(propDef.prop).filter(p => p !== propDef.prop);
+  const parsedShorthand = parsedShorthands.find(_.matchesProperty('prop', propDef.prop));
+  const parsedLonghands = parsedShorthand ? parsedShorthand.longhand : [];
+  log.debug('(normaliseAnimatable)', propDef, existingLonghands, parsedLonghands);
+  
+  clone.properties = existingLonghands.length ? existingLonghands : parsedLonghands;
+  return clone;
 }
 
 // Very naive stringification, designed specifically for the known keys of this parser
 function formatKeyValPairs(obj) {
   let parts = [];
+  const toString = (value) => JSON.stringify(value).replace(/"/g, "'");
+  const valueString = (value) => {
+    if (Array.isArray(value)) {
+      return '[' + value.map(toString).join(', ') + ']';
+    }
+    return toString(value);
+  };
+
   for (let [key, value] of Object.entries(obj)) {
-    parts.push(key + ': ' + JSON.stringify(value).replace(/"/g, "'"));
+    parts.push(key + ': ' + valueString(value));
   }
   return '{' + parts.join(', ') + '}';
 }
@@ -111,29 +127,29 @@ function compareAnimatable(specs) {
 
   specs.forEach((spec) => {
     const normalised = spec.propsAnimated.map((propDef) => {
-      const { prop, details } = propDef;
+      const { prop } = propDef;
       const existing = cssAnimatedProperties.getProperty(prop);
-      // const parsed = normaliseAnimatable(propDef); // TODO: Not used?
+      const parsed = normaliseAnimatable(propDef, spec.propsShorthand);
+      const parsedPropDef = Object.assign({}, propDef, { details: parsed });
       if (!existing) {
-        return notMatched(propDef);
+        return notMatched(parsedPropDef);
       }
-      if (existing.types && !isEqualArray(existing.types, details.types)) {
-        compareLog('--MISMATCHED TYPES--', existing, details);
-        return notMatched(propDef);
+      if (existing.types && !isEqualArray(existing.types, parsed.types)) {
+        compareLog('--MISMATCHED TYPES--', existing, parsed);
+        return notMatched(parsedPropDef);
       }
-      if (existing.properties && !isEqualArray(existing.properties, details.properties)) {
+      if (existing.properties && !isEqualArray(existing.properties, parsed.properties)) {
         // If the spec parser found a value type, but the existing data has properties
-        if (details.types) {
-          compareLog('--MISMATCHED STRUCTURE (TYPES vs SHORTHAND)--', existing, details);
-          return notMatched(propDef);
+        if (parsed.types) {
+          compareLog('--MISMATCHED STRUCTURE (TYPES vs SHORTHAND)--', existing, parsed);
+          return notMatched(parsedPropDef);
         }
         // If the spec-parsed properties are missing, assume they're the same as existing ones
-        if (!details.properties || !details.properties.length) {
-          compareLog('--NO PARSED SHORTHAND PROPERTIES--', existing, details);
-          return matched(propDef);
+        if (!parsed.properties || !parsed.properties.length) {
+          compareLog('--NO PARSED SHORTHAND PROPERTIES--', existing, parsed);
+          return matched(parsedPropDef);
         }
-        // TODO: Check result of compareShorthands, see if any are new
-        return notMatched(propDef);
+        return notMatched(parsedPropDef);
       }
       return matched(propDef);
     });
