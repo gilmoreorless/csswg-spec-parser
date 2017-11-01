@@ -3,39 +3,10 @@ const async = require('async');
 const chalk = require('chalk');
 const cssAnimatedProperties = require('css-animated-properties');
 const cssShorthandProperties = require('css-shorthand-properties');
-const util = require('util');
 
 const findSpecs = require('./find-specs');
 const specParser = require('./spec-parser');
-
-const logLevels = {
-  WARN: 0,
-  INFO: 1,
-  DEBUG: 2,
-};
-
-const CURRENT_LOG_LEVEL = logLevels.DEBUG;
-
-const logger = (level) => {
-  return (...args) => {
-    if (CURRENT_LOG_LEVEL >= level) {
-      // Don't use util.inspect if any string contains escape sequences (i.e. strings from chalk)
-      var hasEscape = args.some(arg => typeof arg === 'string' && arg.includes('\u001b['));
-      if (hasEscape) {
-        console.log(...args);
-      } else {
-        args.forEach((arg) => {
-          console.log(util.inspect(arg, {depth: null, colors: true}));
-        });
-      }
-    }
-  };
-};
-const log = {
-  warn: logger(logLevels.WARN),
-  info: logger(logLevels.INFO),
-  debug: logger(logLevels.DEBUG),
-};
+const { log } = require('./logger');
 
 function isEqualArray(arr1, arr2) {
   return _.isEqual(_.sortBy(arr1), _.sortBy(arr2));
@@ -87,7 +58,7 @@ function compareShorthands(specs) {
     }));
     if (different.length) {
       if (!headerShown) {
-        console.log('\n----- NEW SHORTHANDS: %s -----', chalk.bold('REVIEW CAREFULLY'));
+        console.log(chalk.yellow(chalk`\n----- NEW SHORTHANDS: {black.bgYellow  REVIEW CAREFULLY } -----`));
         headerShown = true;
       }
       console.log(chalk.gray(`\n// ${spec.title}: ${spec.url}`));
@@ -106,16 +77,23 @@ function normaliseAnimatable(propDef) {
   return longhands;
 }
 
+// Very naive stringification, designed specifically for the known keys of this parser
+function formatKeyValPairs(obj) {
+  let parts = [];
+  for (let [key, value] of Object.entries(obj)) {
+    parts.push(key + ': ' + JSON.stringify(value).replace(/"/g, "'"));
+  }
+  return '{' + parts.join(', ') + '}';
+}
+
 function formatAnimatable(props) {
-  // console.log('(TODO: formatAnimatable)', props);
   const maxLen = Math.max(...props.map(p => p.propDef.prop.length));
   const space = (str) => Array(maxLen - str.length).fill(' ').join('');
   props.forEach((p) => {
     let pd = p.propDef;
     console.log(
       `'${pd.prop}': ${space(pd.prop)}` +
-      JSON.stringify(pd.details).replace(/"/g, "'") + // TODO: Make this better
-      `,`
+      formatKeyValPairs(pd.details) + ','
     );
   });
 }
@@ -126,7 +104,7 @@ function compareAnimatable(specs) {
   const notMatched = (propDef) => ({ propDef, isMatch: false });
 
   const compareLog = (title, existing, parsed) => {
-    log.info(title);
+    log.info(chalk.bgBlack.white(title));
     log.info(chalk.bold('  Existing:'), existing);
     log.info(chalk.bold('  Parsed:'), parsed);
   };
@@ -164,11 +142,12 @@ function compareAnimatable(specs) {
     log.debug('DIFFERENT', different);
     if (different.length) {
       if (!headerShown) {
-        console.log('\n----- NEW ANIMATABLE: %s -----', chalk.bold('REVIEW CAREFULLY'));
+        console.log(chalk.yellow(chalk`\n----- NEW ANIMATABLE: {black.bgYellow  REVIEW CAREFULLY } -----\n`));
         headerShown = true;
       }
-      console.log(chalk.gray(`\n// ${spec.title}: ${spec.url}`));
+      console.log(chalk.gray(`// ${spec.title}: ${spec.url}`));
       formatAnimatable(different);
+      console.log();
     }
   });
 }
@@ -196,7 +175,7 @@ function parseAllSpecs(urlList) {
     log.debug(results);
     if (!err) {
       process.nextTick(() => {
-        log.info('\n----- PROCESS -----');
+        log.debug(chalk.bold('\n----- PROCESS -----'));
         compareShorthands(results);
         compareAnimatable(results);
       });

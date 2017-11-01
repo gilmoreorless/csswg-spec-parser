@@ -4,6 +4,7 @@ const chalk = require('chalk');
 const { getPage, getText } = require('./page-utils');
 const rawAnimationTypes = require('css-animated-properties').types;
 const cssShorthandProps = require('css-shorthand-properties');
+const { log } = require('./logger');
 
 const animationTypes = Object.entries(rawAnimationTypes).map(([key, defs]) => [defs.name, key]);
 
@@ -25,11 +26,11 @@ function getLonghandProps(shorthandProp, syntaxElem, descElem) {
       }
       return p;
     };
-    console.log(chalk.yellow('getLonghandProps - new data!', shorthandProp));
-    console.log(chalk.red(formatProps(existingProps)));
-    console.log(chalk.magenta(formatProps(syntaxProps)));
-    console.log(chalk.cyan(formatProps(descProps)));
-    console.log(chalk.black.bgGreen(formatProps(unionProps)));
+    log.debug(chalk.yellow('getLonghandProps - new data!', shorthandProp));
+    log.debug(chalk.red(formatProps(existingProps)));
+    log.debug(chalk.magenta(formatProps(syntaxProps)));
+    log.debug(chalk.cyan(formatProps(descProps)));
+    log.debug(chalk.black.bgGreen(formatProps(unionProps)));
     return unionProps;
   }
   return cssShorthandProps.expand(shorthandProp);
