@@ -10,7 +10,7 @@ const logLevels = {
 const CURRENT_LOG_LEVEL = logLevels.WARN;
 
 function canLog(level) {
-  return logLevels[level] && CURRENT_LOG_LEVEL >= logLevels[level];
+  return (level in logLevels) && CURRENT_LOG_LEVEL >= logLevels[level];
 }
 
 function logger(level) {

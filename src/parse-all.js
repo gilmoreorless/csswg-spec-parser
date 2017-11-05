@@ -72,7 +72,7 @@ function compareShorthands(specs) {
 
 function normaliseAnimatable(propDef, parsedShorthands) {
   let clone = _.clone(propDef.details);
-  if (!clone.properties) {
+  if (!clone.properties || clone.properties.length > 0) {
     return clone;
   }
 
@@ -102,11 +102,10 @@ function formatKeyValPairs(obj) {
   return '{' + parts.join(', ') + '}';
 }
 
-function formatAnimatable(props) {
-  const maxLen = Math.max(...props.map(p => p.propDef.prop.length));
+function formatAnimatable(propDefs) {
+  const maxLen = Math.max(...propDefs.map(pd => pd.prop.length));
   const space = (str) => Array(maxLen - str.length).fill(' ').join('');
-  props.forEach((p) => {
-    let pd = p.propDef;
+  propDefs.forEach((pd) => {
     console.log(
       `'${pd.prop}': ${space(pd.prop)}` +
       formatKeyValPairs(pd.details) + ','
@@ -125,11 +124,11 @@ function compareAnimatable(specs) {
     log.info(chalk.bold('  Parsed:'), parsed);
   };
 
-  specs.forEach((spec) => {
-    const normalised = spec.propsAnimated.map((propDef) => {
+  function normaliseAll(animatableProps, shorthandProps) {
+    return animatableProps.map((propDef) => {
       const { prop } = propDef;
       const existing = cssAnimatedProperties.getProperty(prop);
-      const parsed = normaliseAnimatable(propDef, spec.propsShorthand);
+      const parsed = normaliseAnimatable(propDef, shorthandProps);
       const parsedPropDef = Object.assign({}, propDef, { details: parsed });
       if (!existing) {
         return notMatched(parsedPropDef);
@@ -153,18 +152,69 @@ function compareAnimatable(specs) {
       }
       return matched(propDef);
     });
+  }
 
-    const different = normalised.filter(p => !p.isMatch);
+  specs.forEach((spec) => {
+    // Categorise the list of parsed properties based on whether they match the existing animatable data
+    const normalised = normaliseAll(spec.propsAnimated, spec.propsShorthand);
+
+    // Work with only the non-matching properties
+    let different = normalised.filter(p => !p.isMatch).map(p => p.propDef);
     log.debug('DIFFERENT', different);
-    if (different.length) {
-      if (!headerShown) {
-        console.log(chalk.yellow(chalk`\n----- NEW ANIMATABLE: {black.bgYellow  REVIEW CAREFULLY } -----\n`));
-        headerShown = true;
-      }
-      console.log(chalk.gray(`// ${spec.title}: ${spec.url}`));
-      formatAnimatable(different);
-      console.log();
+    if (!different.length) {
+      return;
     }
+
+    const animatableProps = new Set(normalised.map(p => p.propDef.prop));
+    // Loop through animatable shorthand properties to remove longhands that are not animatable
+    let dataHasChanged = true;
+    while (dataHasChanged) {
+      log.debug(chalk.bgBlack.white('\n-- dataHasChanged loop --'));
+      dataHasChanged = false;
+      // Remove longhands that are not animatable
+      different.forEach((propDef) => {
+        if (propDef.details.properties) {
+          let oldProps = propDef.details.properties;
+          let filteredProps = oldProps.filter(prop => animatableProps.has(prop));
+          if (!isEqualArray(oldProps, filteredProps)) {
+            log.info(`Filtered out non-animatable props for ${chalk.bold(propDef.prop)}`);
+            log.debug(oldProps, filteredProps);
+            propDef.details.properties = filteredProps;
+            dataHasChanged = true;
+          }
+        }
+      });
+
+      // Remove any properties with no longhands remaining, as they are also not animatable
+      let i = 0;
+      while (i < different.length) {
+        let propDef = different[i];
+        if (propDef.details.properties && !propDef.details.properties.length) {
+          log.info(`Removed non-animatable property ${chalk.bold(propDef.prop)}`);
+          different.splice(i, 1);
+          animatableProps.delete(propDef.prop);
+          dataHasChanged = true;
+        } else {
+          i++;
+        }
+      }
+    }
+
+    // Re-check if the non-matching properties are still non-matching, now that some longhands have been removed
+    different = normaliseAll(different, spec.propsShorthand).filter(p => !p.isMatch).map(p => p.propDef);
+    log.debug('DIFFERENT (again)', different);
+    if (!different.length) {
+      return;
+    }
+
+    // Log out the new/changed properties in a format that can be copy-pasted into css-animated-properties
+    if (!headerShown) {
+      console.log(chalk.yellow(chalk`\n----- NEW ANIMATABLE: {black.bgYellow  REVIEW CAREFULLY } -----\n`));
+      headerShown = true;
+    }
+    console.log(chalk.gray(`// ${spec.title}: ${spec.url}`));
+    formatAnimatable(different);
+    console.log();
   });
 }
 
@@ -181,9 +231,12 @@ function collectSpecUrls() {
 function parseAllSpecs(urlList) {
   log.debug(urlList);
   async.map(urlList, function (url, done) {
+    if (!url.length) return null;
     specParser.parseUrl(url).then(function (props) {
       done(null, props);
     }, function (err) {
+      log.warn(chalk.red(`PARSE ERROR FOR ${url}`))
+      log.warn(err && err.error || err.response && err.response.error || err);
       done(err);
     });
   }, function (err, results) {

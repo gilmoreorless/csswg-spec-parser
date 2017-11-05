@@ -36,7 +36,8 @@ function getLonghandProps(shorthandProp, syntaxElem, descElem) {
   return cssShorthandProps.expand(shorthandProp);
 }
 
-// TODO: Smarter parsing of animation type values. Use regex and flag deviations from the pattern (e.g. grid-template-columns)
+// TODO: Smarter parsing of animation type values. Use regex and flag deviations from the pattern
+// (e.g. grid-template-columns, shape-outside)
 function getAnimationType(elem) {
   let details = { types: [] };
   const text = getText(elem);
