@@ -63,11 +63,10 @@ function getAnimationType(elem) {
   return details;
 }
 
-exports.parseUrl = function (url) {
+exports.parseUrl = async function (url) {
   console.log('parseUrl', url);
-  return getPage(url).then(function (page) {
-    return Object.assign({ url }, exports.parsePage(page));
-  });
+  const page = await getPage(url);
+  return Object.assign({ url }, exports.parsePage(page));
 };
 
 exports.parsePage = function (page) {

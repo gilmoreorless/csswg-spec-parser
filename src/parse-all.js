@@ -1,6 +1,6 @@
 const _ = require('lodash');
-const async = require('async');
 const chalk = require('chalk');
+const pMap = require('p-map');
 const cssAnimatedProperties = require('css-animated-properties');
 const cssShorthandProperties = require('css-shorthand-properties');
 
@@ -48,6 +48,9 @@ function formatShorthands(shorthands) {
 function compareShorthands(specs) {
   let headerShown = false;
   specs.forEach((spec) => {
+    if (!spec) {
+      return;
+    }
     const different = _.compact(spec.propsShorthand.map(({ prop, longhand }) => {
       const existing = _.flattenDeep(cssShorthandProperties.expand(prop, true));
       const parsed = normaliseLonghands(longhand, spec.propsShorthand);
@@ -155,6 +158,9 @@ function compareAnimatable(specs) {
   }
 
   specs.forEach((spec) => {
+    if (!spec) {
+      return;
+    }
     // Categorise the list of parsed properties based on whether they match the existing animatable data
     const normalised = normaliseAll(spec.propsAnimated, spec.propsShorthand);
 
@@ -228,28 +234,23 @@ function collectSpecUrls() {
   });
 }
 
-function parseAllSpecs(urlList) {
+async function parseAllSpecs(urlList) {
   log.debug(urlList);
-  async.map(urlList, function (url, done) {
-    if (!url.length) return null;
-    specParser.parseUrl(url).then(function (props) {
-      done(null, props);
-    }, function (err) {
+  let parseSpec = async function (url) {
+    try {
+      return await specParser.parseUrl(url)
+    } catch (err) {
       log.warn(chalk.red(`PARSE ERROR FOR ${url}`))
       log.warn(err && err.error || err.response && err.response.error || err);
-      done(err);
-    });
-  }, function (err, results) {
-    log.debug('DONE', err, results && results.length);
-    log.debug(results);
-    if (!err) {
-      process.nextTick(() => {
-        log.debug(chalk.bold('\n----- PROCESS -----'));
-        compareShorthands(results);
-        compareAnimatable(results);
-      });
+      return null;
     }
-  });
+  };
+  let results = await pMap(urlList, parseSpec, { concurrency: 2 });
+  log.debug('DONE', results && results.length);
+  log.debug(results);
+  log.debug(chalk.bold('\n----- PROCESS -----'));
+  compareShorthands(results);
+  compareAnimatable(results);
 }
 
 /* Full run: *\/
