@@ -1,0 +1,69 @@
+=== PARSE ALL SPECS ===
+
+Open CSSWG "current work" page
+Look for stable(ish) specs (REC, CR, PR)
+For each URL:
+  Parse spec page [see elsewhere]
+  Compare shorthand properties [see elsewhere]
+  Compare animatable properties [see elsewhere]
+
+
+=== PARSE SPEC PAGE ===
+
+Open URL
+For each propdef table
+  Get property name
+  Get property value syntax
+  If computed value is 'see individual properties'
+    Flag it as shorthand property
+    Find the paragraph element after the propdef table, as it might contain longhand details
+  If animatable property (but not a shorthand), try to get animatable details
+    Parse animatable text description, find animation types & details (e.g. repeatable)
+  If property is "interesting" (shorthand or animatable), process it
+    If shorthand property, attempt to find longhand values
+      If property is known in css-shorthand-properties
+        Just use the known longhand values (as they're likely to be more accurate than the parser)
+        Add it to shorthand list with known longhands
+      Otherwise, if it's an unknown shorthand
+        Find properties referenced in propdef's value syntax
+        Find properties referenced in description paragraph
+        Add it to shorthand list with combined detected longhands
+    If shorthand property, add it to animatable list (as shorthand with empty longhand list)
+    If animatable (but not shorthand), add it to animatable list
+Return shorthand and animatable lists
+
+
+=== COMPARE SHORTHAND PROPERTIES ===
+
+For each parsed spec page
+  For each shorthand property
+    Find the property's longhands in css-shorthand-properties
+    Normalise the parsed longhands by expanding any nested shorthands
+    If the two longhand lists don't match, mark property as DIFFERING
+  For each differing property
+    (Just logs the longhands for manual verification right now)
+    ~-=FUTURE=-~
+      Open css-shorthand-properties source (if it's not already open)
+      Add a line to the data list with the new shorthands
+~-=FUTURE=-~
+  If all differing properties have been added, show a source diff for manual verification
+
+
+=== COMPARE ANIMATABLE PROPERTIES ===
+
+For each parsed spec page
+  For each animatable property, mark it as matching existing definitions (yes/no)
+    Find the property's details in css-animated-properties
+    If no details are found, mark as NOT MATCHING
+    If known types and parsed types differ, mark as NOT MATCHING
+    If property is a shorthand and the known and parsed longhands differ
+      If parsed longhands are missing, use known ones and mark as MATCHING
+      Otherwise, mark as NOT MATCHING
+  For each differing (non-matching) property
+    (Just logs the definitions for manual verification right now)
+    ~-=FUTURE=-~
+      Open css-animated-properties source (if it's not already open)
+      Add a line to the data list with the new shorthands
+~-=FUTURE=-~
+  If any differing properties have been added, show a source diff for manual verification
+      

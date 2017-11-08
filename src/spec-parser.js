@@ -37,7 +37,7 @@ function getLonghandProps(shorthandProp, syntaxElem, descElem) {
 }
 
 // TODO: Smarter parsing of animation type values. Use regex and flag deviations from the pattern
-// (e.g. grid-template-columns, shape-outside)
+// (e.g. grid-template-columns, shape-outside, clip-path)
 function getAnimationType(elem) {
   let details = { types: [] };
   const text = getText(elem);
