@@ -109,13 +109,8 @@ function formatKeyValPairs(obj) {
 }
 
 function formatAnimatable(propDefs) {
-  const maxLen = Math.max(...propDefs.map(pd => pd.prop.length));
-  const space = (str) => Array(maxLen - str.length).fill(' ').join('');
   propDefs.forEach((pd) => {
-    console.log(
-      `'${pd.prop}': ${space(pd.prop)}` +
-      formatKeyValPairs(pd.details) + ','
-    );
+    console.log(`'${pd.prop}': ${formatKeyValPairs(pd.details)},`);
   });
 }
 
@@ -174,7 +169,11 @@ function compareAnimatable(specs) {
       return;
     }
 
-    const animatableProps = new Set(normalised.map(p => p.propDef.prop));
+    const animatableProps = new Set(
+      _.keys(cssAnimatedProperties.animatedProperties).concat(
+        normalised.map(p => p.propDef.prop)
+      )
+    );
     // Loop through animatable shorthand properties to remove longhands that are not animatable
     let dataHasChanged = true;
     while (dataHasChanged) {
@@ -236,6 +235,7 @@ const localUrls = {
   'https://www.w3.org/TR/compositing-1/': '',
   'https://www.w3.org/TR/css-break-3': 'http://localhost:8080/css-break-3/Overview.html',
   'https://www.w3.org/TR/css-cascade-4': 'http://localhost:8080/css-cascade-4/Overview.html',
+  'https://www.w3.org/TR/css-contain-1/': 'http://localhost:8080/css-contain-1/Overview.html',
   'https://www.w3.org/TR/css-counter-styles-3/': 'http://localhost:8080/css-counter-styles-3/Overview.html',
   'https://www.w3.org/TR/css-flexbox-1/': 'http://localhost:8080/css-flexbox-1/Overview.html',
   'https://www.w3.org/TR/css-grid-1': 'http://localhost:8080/css-grid-1/Overview.html',
@@ -260,6 +260,7 @@ const localUrls = {
   'https://www.w3.org/TR/css3-ui': 'http://localhost:8080/css-ui-3/Overview.html',
   'https://www.w3.org/TR/css3-values/': 'http://localhost:8080/css-values-3/Overview.html',
   'https://www.w3.org/TR/css3-writing-modes': 'http://localhost:8080/css-writing-modes-3/Overview.html',
+  'https://www.w3.org/TR/mediaqueries-4/': 'http://localhost:8080/mediaqueries-4/Overview.html',
   'https://www.w3.org/TR/geometry-1': '',
   'https://www.w3.org/TR/selectors/': 'http://localhost:8080/selectors-3/Overview.html',
 };
@@ -330,8 +331,4 @@ parseAllSpecs(debugUrls);
  * - Licence
  * - Split shorthand and animatable processing into separate files (and rename methods to make more sense)
  * - TypeScript/Flow? (Would help with keeping track of data shapes)
- * - Check all other TODO comments
- * 
- * - Resolve data oddities
- *   - Cascading and Inheritance is parsed twice (Level 3 & Level 4)
  */

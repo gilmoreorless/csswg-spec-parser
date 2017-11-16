@@ -36,8 +36,6 @@ function getLonghandProps(shorthandProp, syntaxElem, descElem) {
   return cssShorthandProps.expand(shorthandProp);
 }
 
-// TODO: Smarter parsing of animation type values. Use regex and flag deviations from the pattern
-// (e.g. grid-template-columns, shape-outside, clip-path)
 function getAnimationType(elem) {
   let details = { types: [] };
   const text = getText(elem);
@@ -49,7 +47,7 @@ function getAnimationType(elem) {
   }
   let hasLpc = false;
   animationTypes.forEach(([name, key]) => {
-    if (~text.indexOf(name)) {
+    if (~text.indexOf(name) || ~text.indexOf(key)) {
       details.types.push(key);
       if (key === 'length-percentage-calc') {
         hasLpc = true;
@@ -116,15 +114,12 @@ exports.parsePage = function (page) {
           if (shorthand || value === shorthandText) {
             break;
           }
-          if (value !== 'no' && value !== 'discrete') {
+          if (value !== 'no' && value !== 'discrete' && value !== 'n/a') {
             animatable = getAnimationType(tr.children[1]);
           }
           break;
       }
     });
-    // if (shorthand) {
-    //   console.log([name, syntax, getText(table.nextElementSibling)]);
-    // }
     if (shorthand || animatable) {
       addProp(name, shorthand, animatable);
     }
