@@ -41,7 +41,7 @@ For each parsed spec page
     Normalise the parsed longhands by expanding any nested shorthands
     If the two longhand lists don't match, mark property as DIFFERING
   For each differing property
-    (Just logs the longhands for manual verification right now)
+    Log the definitions for manual verification
     ~-=FUTURE=-~
       Open css-shorthand-properties source (if it's not already open)
       Add a line to the data list with the new shorthands
@@ -57,13 +57,18 @@ For each parsed spec page
     If no details are found, mark as NOT MATCHING
     If known types and parsed types differ, mark as NOT MATCHING
     If property is a shorthand and the known and parsed longhands differ
-      If parsed longhands are missing, use known ones and mark as MATCHING
+      If parsed longhands are missing
+        If property existed in css-shorthand-properties, use known ones and mark as MATCHING
+        Otherwise, use parsed longhands and mark as MATCHING
       Otherwise, mark as NOT MATCHING
   For each differing (non-matching) property
-    (Just logs the definitions for manual verification right now)
+    Repeatedly reduce the list by eliminating incorrect values (applies to shorthands only)
+      Eliminate any non-animatable longhand properties from parsed lists
+      Eliminate any shorthands that no longer have any animatable longhands
+    Log the definitions for manual verification
     ~-=FUTURE=-~
       Open css-animated-properties source (if it's not already open)
       Add a line to the data list with the new shorthands
 ~-=FUTURE=-~
   If any differing properties have been added, show a source diff for manual verification
-      
+

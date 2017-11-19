@@ -327,8 +327,6 @@ parseAllSpecs(debugUrls);
 /**
  * TODO:
  * 
- * - Documentation
- * - Licence
  * - Split shorthand and animatable processing into separate files (and rename methods to make more sense)
  * - TypeScript/Flow? (Would help with keeping track of data shapes)
  */
