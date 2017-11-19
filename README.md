@@ -26,7 +26,7 @@ Simply put, the parser:
 
 I then copy the new data into the appropriate module repository and publish a new version.
 
-A more detailed process is described in [PROCESS.txt](). It’s not fool-proof (hence the manual copy/paste step) — a list of problems found during this project is described in [PROBLEMS.md]().
+A more detailed process is described in [PROCESS.txt](PROCESS.txt). It’s not fool-proof (hence the manual copy/paste step) — a list of problems found during this project is described in [PROBLEMS.md](PROBLEMS.md).
 
 ### Setup / development
 
@@ -39,7 +39,7 @@ There are some extra tools available for development and debugging.
 
 #### Extra logging
 
-By default, the only output from the parser is the name/URL of the spec being parsed, and the final lists of changed data. If something doesn’t look right, extra logging can be added. The file [`src/logger.js`]() has a flag of `CURRENT_LOG_LEVEL` that can be the following values:
+By default, the only output from the parser is the name/URL of the spec being parsed, and the final lists of changed data. If something doesn’t look right, extra logging can be added. The file [`src/logger.js`](src/logger.js) has a flag of `CURRENT_LOG_LEVEL` that can be the following values:
 
 * `logLevels.WARN` — the default minimal logging.
 * `logLevels.INFO` — extra information when eliminating parsed longhands for animatable properties.
@@ -52,7 +52,7 @@ To avoid lots of requests to W3C’s servers while debugging, it’s best to tes
 1. Clone the [`csswg-drafts`](https://github.com/w3c/csswg-drafts) repository (or update an existing clone).
 2. Save a copy of the [W3C current work][css-current-work] page to `test-current-work.html` in the root of the repository.
 3. From the root of the repository, run a simple HTTP server on port 8080 (Node’s [`http-server`](https://www.npmjs.com/package/http-server) module or Python’s inbuilt `SimpleHTTPServer` module will suffice).
-4. In [`src/parse-all.js`](), change the `USE_LOCAL_TESTING` flag to `true`.
+4. In [`src/parse-all.js`](src/parse-all.js), change the `USE_LOCAL_TESTING` flag to `true`.
 
 
 [css-current-work]: https://www.w3.org/Style/CSS/current-work
