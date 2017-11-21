@@ -32,7 +32,12 @@ A more detailed process is described in [PROCESS.txt](PROCESS.txt). It’s not f
 
 1. Make sure there’s a decent internet connection.
 2. `npm install`
-3. `npm run all`
+3. `npm run parse`
+    * Alternatively, to parse only specific specs, append the spec URLs to the command.
+      For example, to parse only flexbox and grid:
+      ```sh
+      npm run parse https://www.w3.org/TR/css-flexbox-1/ https://www.w3.org/TR/css-grid-1/
+      ```
 4. Copy/paste data into the right module.
 
 There are some extra tools available for development and debugging.
@@ -49,10 +54,13 @@ By default, the only output from the parser is the name/URL of the spec being pa
 
 To avoid lots of requests to W3C’s servers while debugging, it’s best to test on a local copy of the specs:
 
-1. Clone the [`csswg-drafts`](https://github.com/w3c/csswg-drafts) repository (or update an existing clone).
-2. Save a copy of the [W3C current work][css-current-work] page to `test-current-work.html` in the root of the repository.
-3. From the root of the repository, run a simple HTTP server on port 8080 (Node’s [`http-server`](https://www.npmjs.com/package/http-server) module or Python’s inbuilt `SimpleHTTPServer` module will suffice).
-4. In [`src/parse-all.js`](src/parse-all.js), change the `USE_LOCAL_TESTING` flag to `true`.
+1. Clone the [csswg-drafts](https://github.com/w3c/csswg-drafts) repository (or update an existing clone).
+1. Save a copy of the [W3C current work][css-current-work] page to `test-current-work.html` in the root of the repository.
+1. Install [bikeshed](https://github.com/tabatkins/bikeshed) locally.
+1. In the root of the `csswg-drafts` repository:
+    1. Run `find . -name '*.bs' -exec bikeshed spec {} \;` to generate HTML pages.
+    1. Run a simple HTTP server on port 8080 (Node’s [`http-server`](https://www.npmjs.com/package/http-server) module or Python’s inbuilt `SimpleHTTPServer` module will suffice).
+1. In [`src/parse-all.js`](src/parse-all.js), change the `USE_LOCAL_TESTING` flag to `true`.
 
 
 [css-current-work]: https://www.w3.org/Style/CSS/current-work

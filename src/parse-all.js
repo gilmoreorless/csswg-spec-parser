@@ -1,5 +1,6 @@
 const chalk = require('chalk');
 const pMap = require('p-map');
+const process = require('process');
 
 const findSpecs = require('./find-specs');
 const specParser = require('./spec-parser');
@@ -87,7 +88,12 @@ async function parseAllSpecs(urlList) {
 
 /* Full run: */
 (async function () {
-  let urls = (await collectSpecUrls()).filter(url => url && !url.includes('CSS2'));
+  let urls;
+  if (process.argv.length > 2) {
+    urls = process.argv.slice(2);
+  } else {
+    urls = (await collectSpecUrls()).filter(url => url && !url.includes('CSS2'));
+  }
   parseAllSpecs(urls);
 })();
 /* */
