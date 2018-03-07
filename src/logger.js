@@ -29,7 +29,7 @@ function logger(level) {
       }
     }
   }
-};
+}
 
 const log = {
   warn: logger('WARN'),
